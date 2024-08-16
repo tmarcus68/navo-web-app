@@ -35,6 +35,11 @@ export default function WeatherWidget() {
     };
 
     fetchWeather();
+
+    // Poll weather data every minute
+    const intervalId = setInterval(fetchWeather, 60000);
+
+    return () => clearInterval(intervalId);
   }, [error]);
 
   return (
