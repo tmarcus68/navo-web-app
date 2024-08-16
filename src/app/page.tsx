@@ -1,8 +1,11 @@
-// src/app/page.tsx
-import React from "react";
+"use client"; // This directive makes this component a Client Component
 
-const Page: React.FC = () => {
-  return <div>Hello World</div>;
-};
+import WeatherWidget from "./components/WeatherWidget";
 
-export default Page;
+export default function Home() {
+  return (
+    <main className="container">
+      <WeatherWidget />
+    </main>
+  );
+}

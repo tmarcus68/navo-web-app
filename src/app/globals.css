@@ -1,71 +1,88 @@
-/* src/app/globals.css */
-
-/* Tailwind CSS base styles */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Root custom properties */
-:root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+.weather-widget {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  height: 60px; /* Adjust as needed */
+  z-index: 1000;
+  padding: 10px; /* Adjust padding as needed */
 }
 
-/* Dark mode custom properties */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
-/* Body styles */
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  margin: 0;
-  font-family: Arial, sans-serif;
+.widget-content {
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
+  justify-content: space-evenly;
+  box-sizing: border-box;
+  padding: 0; /* Remove extra padding if not needed */
 }
 
-/* Utility classes */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+.weather-info {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* Adjust gap as needed */
 }
 
-/* Custom styles */
-.container {
-  text-align: center;
+.temperature,
+.weather-main {
+  font-size: 27px;
+  color: white;
+  font-weight: bold;
 }
 
-.title {
-  @apply text-3xl mb-4 text-gray-800; /* Tailwind utility classes */
+.weather-main {
+  text-transform: uppercase;
 }
 
-.location {
-  @apply text-2xl text-gray-700; /* Tailwind utility classes */
-}
-
-.label {
-  @apply font-bold;
-}
-
-.value {
-  @apply text-2xl text-black;
+.weather-icon {
+  width: 60px;
+  height: 60px;
 }
 
 .error {
-  @apply text-red-600 text-xl; /* Tailwind utility classes */
+  color: red;
+  font-size: 12px;
+}
+.weather-widget {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 560px; /* Set the width */
+  height: 50px; /* Adjust height as needed */
+  z-index: 1000;
+  box-sizing: border-box;
+}
+
+.widget-content {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center align content */
+  height: 100%;
+}
+
+.weather-info {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center align content within weather-info */
+  gap: 15px; /* Adjust gap as needed */
+  width: 100%; /* Ensure weather-info takes full width */
+}
+
+.temperature,
+.weather-main {
+  font-size: 27px;
+  color: white;
+  font-weight: bold;
+}
+
+.weather-main {
+  text-transform: uppercase;
+}
+
+.weather-icon {
+  width: 50px;
+  height: 50px;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
 }
