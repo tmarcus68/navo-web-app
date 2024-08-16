@@ -45,7 +45,7 @@ export default function WeatherWidget() {
           <div className="weather-info">
             <p className="temperature">{weather.main.temp.toFixed(1)}°C</p>
             <img
-              src={`http://openweathermap.org/img/wn/${weather.weather[0].icon}.png`}
+              src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}.png`}
               alt={weather.weather[0].description}
               className="weather-icon"
             />
