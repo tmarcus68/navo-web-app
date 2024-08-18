@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 
 type WeatherData = {
-  main: {
+  current: {
     temp: number;
+    weather: Array<{
+      main: string;
+      description: string;
+      icon: string;
+    }>;
   };
-  weather: Array<{
-    main: string;
-    description: string;
-    icon: string;
-  }>;
-  name: string;
 };
 
 export default function WeatherWidget() {
@@ -25,9 +24,11 @@ export default function WeatherWidget() {
         }
         const data: WeatherData = await response.json();
         setWeather(data);
+        console.log("Current temp: ", data.current.temp);
         if (error) setError(null); // Clear error if fetch is successful
       } catch (err: any) {
         if (!error)
+          // <-- This condition should prevent the state update loop
           setError(
             err.message || "An error occurred while fetching weather data"
           );
@@ -40,7 +41,7 @@ export default function WeatherWidget() {
     const intervalId = setInterval(fetchWeather, 60000);
 
     return () => clearInterval(intervalId);
-  }, [error]);
+  }, []);
 
   return (
     <div className="weather-widget">
@@ -48,13 +49,13 @@ export default function WeatherWidget() {
         {error && <p className="error">{error}</p>}
         {weather ? (
           <div className="weather-info">
-            <p className="temperature">{weather.main.temp.toFixed(1)}°C</p>
+            <p className="temperature">{weather.current.temp.toFixed(1)}°C</p>
             <img
-              src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}.png`}
-              alt={weather.weather[0].description}
+              src={`https://openweathermap.org/img/wn/${weather.current.weather[0].icon}.png`}
+              alt={weather.current.weather[0].description}
               className="weather-icon"
             />
-            <p className="weather-main">{weather.weather[0].main}</p>
+            <p className="weather-main">{weather.current.weather[0].main}</p>
           </div>
         ) : (
           <p>Loading...</p>

@@ -8,6 +8,7 @@ export async function GET() {
       throw new Error("Failed to fetch location data");
     }
     const locationData = await locationResponse.json();
+    console.log("locationData", locationData);
 
     if (!locationData.latitude || !locationData.longitude) {
       throw new Error("Invalid location data");
@@ -15,7 +16,7 @@ export async function GET() {
 
     // Fetch weather data from OpenWeatherMap API using the location data
     const response = await fetch(
-      `https://api.openweathermap.org/data/2.5/weather?lat=${locationData.latitude}&lon=${locationData.longitude}&appid=${process.env.OPENWEATHERMAP_API_KEY}&units=metric`
+      `https://api.openweathermap.org/data/3.0/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,daily,alerts&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`
     );
 
     if (!response.ok) {
@@ -23,7 +24,7 @@ export async function GET() {
     }
 
     const data = await response.json();
-    console.log(data.main.temp);
+    console.log("Weather", data);
 
     return NextResponse.json(data);
   } catch (error) {
