@@ -8,7 +8,6 @@ export async function GET() {
       throw new Error("Failed to fetch location data");
     }
     const locationData = await locationResponse.json();
-    console.log("locationData", locationData);
 
     if (!locationData.latitude || !locationData.longitude) {
       throw new Error("Invalid location data");
@@ -25,7 +24,6 @@ export async function GET() {
     }
 
     const data = await response.json();
-    console.log("Weather", data);
 
     return NextResponse.json(data);
   } catch (error) {

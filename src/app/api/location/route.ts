@@ -63,7 +63,6 @@ export async function GET() {
 //     }
 
 //     // Store the location data
-//     console.log("Received location data:", { latitude, longitude, timestamp });
 //     latestLocationData = { latitude, longitude, timestamp };
 
 //     return NextResponse.json({
