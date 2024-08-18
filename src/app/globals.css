@@ -45,7 +45,7 @@
   position: fixed;
   bottom: 0;
   right: 0;
-  width: 560px; /* Set the width */
+  width: 640px; /* Set the width */
   height: 50px; /* Adjust height as needed */
   z-index: 1000;
   box-sizing: border-box;
