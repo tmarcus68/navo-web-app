@@ -24,7 +24,6 @@ export default function WeatherWidget() {
         }
         const data: WeatherData = await response.json();
         setWeather(data);
-        console.log("Current temp: ", data.current.temp);
         if (error) setError(null); // Clear error if fetch is successful
       } catch (err: any) {
         if (!error)
