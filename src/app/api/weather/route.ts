@@ -24,6 +24,7 @@ export async function GET() {
         process.env.OPENWEATHERMAP_API_KEY
       }&_=${new Date().getTime()}`,
       {
+        cache: "no-store",
         headers: {
           "Cache-Control": "no-store",
         },
