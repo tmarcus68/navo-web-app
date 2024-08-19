@@ -13,23 +13,22 @@ export async function GET() {
       throw new Error("Invalid location data");
     }
 
+    // Construct the weather API URL
+    const weatherUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${
+      locationData.latitude
+    }&lon=${
+      locationData.longitude
+    }&exclude=minutely,hourly,daily,alerts&units=metric&appid=${
+      process.env.OPENWEATHERMAP_API_KEY
+    }&_=${new Date().getTime()}`;
+
     // Fetch weather data from OpenWeatherMap API using the location data
-    // https://openweathermap.org/api/one-call-3#current
-    const response = await fetch(
-      `https://api.openweathermap.org/data/3.0/onecall?lat=${
-        locationData.latitude
-      }&lon=${
-        locationData.longitude
-      }&exclude=minutely,hourly,daily,alerts&units=metric&appid=${
-        process.env.OPENWEATHERMAP_API_KEY
-      }&_=${new Date().getTime()}`,
-      {
-        cache: "no-store",
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
-    );
+    const response = await fetch(weatherUrl, {
+      cache: "no-store",
+      headers: {
+        "Cache-Control": "no-store",
+      },
+    });
 
     if (!response.ok) {
       throw new Error("Failed to fetch weather data");
