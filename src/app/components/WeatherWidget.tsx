@@ -24,13 +24,11 @@ export default function WeatherWidget() {
         }
         const data: WeatherData = await response.json();
         setWeather(data);
-        if (error) setError(null); // Clear error if fetch is successful
+        setError(null); // Clear error if fetch is successful
       } catch (err: any) {
-        if (!error)
-          // <-- This condition should prevent the state update loop
-          setError(
-            err.message || "An error occurred while fetching weather data"
-          );
+        setError(
+          err.message || "An error occurred while fetching weather data"
+        );
       }
     };
 
