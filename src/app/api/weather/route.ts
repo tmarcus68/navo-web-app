@@ -16,12 +16,12 @@ export async function GET() {
     // Fetch weather data from OpenWeatherMap API using the location data
     // https://openweathermap.org/api/one-call-3#current
     const response = await fetch(
-      `https://api.openweathermap.org/data/3.0/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,daily,alerts&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`,
-      {
-        headers: {
-          "Cache-Control": "no-store",
-        },
-      }
+      `https://api.openweathermap.org/data/3.0/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,daily,alerts&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}`
+      // {
+      //   headers: {
+      //     "Cache-Control": "no-store",
+      //   },
+      // }
     );
 
     if (!response.ok) {
@@ -30,7 +30,13 @@ export async function GET() {
 
     const data = await response.json();
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error fetching weather data:", error);
     return NextResponse.json(
