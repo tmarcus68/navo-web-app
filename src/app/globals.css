@@ -71,6 +71,7 @@
   font-size: 27px;
   color: black;
   font-weight: bold;
+  text-shadow: 1px 1px 2px black; /* Black outline for text */
 }
 
 .weather-main {
@@ -80,6 +81,17 @@
 .weather-icon {
   width: 50px;
   height: 50px;
+  filter: drop-shadow(1px 1px 2px black); /* Black outline for icon */
+}
+
+.map-widget {
+  position: fixed;
+  bottom: 0px;
+  right: 0;
+  width: 640px;
+  height: 360px;
+  z-index: 999;
+  box-sizing: border-box;
 }
 
 .error {
