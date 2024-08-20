@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Store the location data
     latestLocationData = { latitude, longitude, timestamp };
+    console.log("latestLocationData", latestLocationData);
 
     return NextResponse.json({
       status: "success",

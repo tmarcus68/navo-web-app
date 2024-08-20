@@ -21,6 +21,7 @@ export default function MapBoxWidget() {
           throw new Error("Failed to fetch location data");
         }
         const data: LocationData = await response.json();
+        console.log("locationData", data);
         setLocation(data);
         setError(null); // Clear error if fetch is successful
       } catch (err: any) {
