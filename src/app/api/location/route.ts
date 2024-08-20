@@ -17,12 +17,15 @@ export async function GET() {
   try {
     if (latestLocationData) {
       console.log(
-        "location api, GET, lastestLocationData: ",
+        "GET request - Returning latestLocationData: ",
         latestLocationData
       );
       return NextResponse.json(latestLocationData);
     } else {
-      console.log("location api, GET, mockLocationData: ", mockLocationData);
+      console.log(
+        "GET request - Returning mockLocationData: ",
+        mockLocationData
+      );
       return NextResponse.json(mockLocationData);
     }
   } catch (error) {
@@ -53,7 +56,10 @@ export async function POST(request: NextRequest) {
 
     // Store the location data
     latestLocationData = { latitude, longitude, timestamp };
-    console.log("location api, POST, latestLocationData", latestLocationData);
+    console.log(
+      "POST request - latestLocationData updated to: ",
+      latestLocationData
+    );
 
     return NextResponse.json({
       status: "success",
