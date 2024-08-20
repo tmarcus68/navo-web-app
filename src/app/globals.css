@@ -45,7 +45,7 @@
   position: fixed;
   bottom: 0;
   right: 0;
-  width: 500px; /* Set the width */
+  width: 535px; /* Set the width */
   height: 50px; /* Adjust height as needed */
   z-index: 1000;
   box-sizing: border-box;
@@ -88,8 +88,8 @@
   position: fixed;
   bottom: 0px;
   right: 0;
-  width: 500px;
-  height: 300px;
+  width: 535px;
+  height: 200px;
   z-index: 999;
   box-sizing: border-box;
 }
