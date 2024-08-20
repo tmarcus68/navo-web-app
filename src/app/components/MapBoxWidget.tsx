@@ -32,6 +32,11 @@ export default function MapBoxWidget() {
     };
 
     fetchLocation();
+
+    // Poll weather data every minute
+    const intervalId = setInterval(fetchLocation, 60000);
+
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
