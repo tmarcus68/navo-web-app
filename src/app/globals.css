@@ -45,7 +45,7 @@
   position: fixed;
   bottom: 0;
   right: 0;
-  width: 640px; /* Set the width */
+  width: 500px; /* Set the width */
   height: 50px; /* Adjust height as needed */
   z-index: 1000;
   box-sizing: border-box;
@@ -68,7 +68,7 @@
 
 .temperature,
 .weather-main {
-  font-size: 27px;
+  font-size: 25px;
   color: black;
   font-weight: bold;
   text-shadow: 1px 1px 2px black; /* Black outline for text */
@@ -88,8 +88,8 @@
   position: fixed;
   bottom: 0px;
   right: 0;
-  width: 640px;
-  height: 360px;
+  width: 500px;
+  height: 300px;
   z-index: 999;
   box-sizing: border-box;
 }
