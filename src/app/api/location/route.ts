@@ -7,10 +7,19 @@ const mockLocationData = {
   timestamp: new Date().toISOString(),
 };
 
+let latestLocationData: {
+  latitude: number;
+  longitude: number;
+  timestamp: string;
+} | null = null;
+
 export async function GET() {
   try {
-    // Use updated mock data
-    return NextResponse.json(mockLocationData);
+    if (latestLocationData) {
+      return NextResponse.json(latestLocationData);
+    } else {
+      return NextResponse.json(mockLocationData);
+    }
   } catch (error) {
     console.error("Error handling GET request:", error);
     return NextResponse.json(
@@ -20,60 +29,35 @@ export async function GET() {
   }
 }
 
-// let latestLocationData: {
-//   latitude: number;
-//   longitude: number;
-//   timestamp: string;
-// } | null = null;
+export async function POST(request: NextRequest) {
+  try {
+    const { latitude, longitude, timestamp } = await request.json();
 
-// export async function GET() {
-//   try {
-//     if (latestLocationData) {
-//       return NextResponse.json(latestLocationData);
-//     } else {
-//       return NextResponse.json(
-//         { error: "No location data available" },
-//         { status: 404 }
-//       );
-//     }
-//   } catch (error) {
-//     console.error("Error handling GET request:", error);
-//     return NextResponse.json(
-//       { status: "error", message: "Failed to handle GET request" },
-//       { status: 500 }
-//     );
-//   }
-// }
+    // Validate incoming data
+    if (
+      typeof latitude !== "number" ||
+      typeof longitude !== "number" ||
+      typeof timestamp !== "string"
+    ) {
+      console.error("Invalid data format:", { latitude, longitude, timestamp });
+      return NextResponse.json(
+        { status: "error", message: "Invalid data format" },
+        { status: 400 }
+      );
+    }
 
-// export async function POST(request: NextRequest) {
-//   try {
-//     const { latitude, longitude, timestamp } = await request.json();
+    // Store the location data
+    latestLocationData = { latitude, longitude, timestamp };
 
-//     // Validate incoming data
-//     if (
-//       typeof latitude !== "number" ||
-//       typeof longitude !== "number" ||
-//       typeof timestamp !== "string"
-//     ) {
-//       console.error("Invalid data format:", { latitude, longitude, timestamp });
-//       return NextResponse.json(
-//         { status: "error", message: "Invalid data format" },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Store the location data
-//     latestLocationData = { latitude, longitude, timestamp };
-
-//     return NextResponse.json({
-//       status: "success",
-//       data: { latitude, longitude, timestamp },
-//     });
-//   } catch (error) {
-//     console.error("Error handling POST request:", error);
-//     return NextResponse.json(
-//       { status: "error", message: "Failed to handle POST request" },
-//       { status: 500 }
-//     );
-//   }
-// }
+    return NextResponse.json({
+      status: "success",
+      data: { latitude, longitude, timestamp },
+    });
+  } catch (error) {
+    console.error("Error handling POST request:", error);
+    return NextResponse.json(
+      { status: "error", message: "Failed to handle POST request" },
+      { status: 500 }
+    );
+  }
+}
