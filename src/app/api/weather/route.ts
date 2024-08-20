@@ -3,12 +3,18 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     // Fetch location data from your location API route
-    const locationResponse = await fetch(`${process.env.DOMAIN}/api/location`);
+    const locationResponse = await fetch(`${process.env.DOMAIN}/api/location`, {
+      headers: {
+        "Cache-Control": "no-store", // Ensure we get fresh data
+      },
+    });
+
     if (!locationResponse.ok) {
       throw new Error("Failed to fetch location data");
     }
+
     const locationData = await locationResponse.json();
-    console.log("Weather api, locationData: ", locationData);
+    console.log("Weather API, locationData: ", locationData);
 
     if (!locationData.latitude || !locationData.longitude) {
       throw new Error("Invalid location data");
@@ -36,6 +42,8 @@ export async function GET() {
     }
 
     const data = await response.json();
+
+    console.log("Weather API, weather data: ", data); // Debug log
 
     return NextResponse.json(data, {
       headers: {
