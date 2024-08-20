@@ -1,7 +1,7 @@
 "use client"; // This directive makes this component a Client Component
 
 import { useEffect, useState } from "react";
-import Map from "react-map-gl";
+import Map, { Marker } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 type LocationData = {
@@ -35,21 +35,36 @@ export default function MapBoxWidget() {
 
   return (
     <div className="map-widget">
-      {error && <p className="error">{error}</p>}
-      {location ? (
-        <Map
-          mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
-          initialViewState={{
-            latitude: location.latitude,
-            longitude: location.longitude,
-            zoom: 16,
-          }}
-          style={{ width: "100%", height: "100%" }}
-          mapStyle="mapbox://styles/mapbox/streets-v9"
-        />
-      ) : (
-        <p>Loading map...</p>
-      )}
+      <div className="map-content">
+        {error && <p className="error">{error}</p>}
+        {location ? (
+          <Map
+            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+            initialViewState={{
+              latitude: location.latitude,
+              longitude: location.longitude,
+              zoom: 16,
+            }}
+            style={{ width: "100%", height: "100%" }}
+            mapStyle="mapbox://styles/mapbox/streets-v9"
+          >
+            {/* Add custom marker */}
+            <Marker
+              latitude={location.latitude}
+              longitude={location.longitude}
+              anchor="center"
+            >
+              <img
+                src="/jiuerxiong-logo.png"
+                alt="Custom Marker"
+                style={{ width: 50, height: 50 }}
+              />
+            </Marker>
+          </Map>
+        ) : (
+          <p>Loading map...</p>
+        )}
+      </div>
     </div>
   );
 }

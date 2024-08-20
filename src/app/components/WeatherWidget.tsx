@@ -55,7 +55,7 @@ export default function WeatherWidget() {
             <p className="weather-main">{weather.current.weather[0].main}</p>
           </div>
         ) : (
-          <p>Loading...</p>
+          <p>Loading weather...</p>
         )}
       </div>
     </div>

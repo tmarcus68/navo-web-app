@@ -94,6 +94,13 @@
   box-sizing: border-box;
 }
 
+.map-content {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center align content */
+  height: 100%;
+}
+
 .error {
   color: red;
   font-size: 12px;
