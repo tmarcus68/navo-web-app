@@ -22,8 +22,9 @@ export default function MapBoxWidget() {
           throw new Error("Failed to fetch location data");
         }
         const data: ViewState = await response.json(); // Fetch the location and treat it as viewState
-        console.log("locationData", data);
-        setViewState({ ...data, zoom: 16 }); // Set viewState with location and initial zoom level
+        setViewState((prevState) =>
+          prevState ? { ...data, zoom: 16 } : { ...data, zoom: 10 }
+        ); // Set viewState with location and initial zoom level
         setError(null); // Clear error if fetch is successful
       } catch (err: any) {
         setError(
@@ -50,7 +51,7 @@ export default function MapBoxWidget() {
             {...viewState}
             onMove={(evt) => setViewState(evt.viewState)}
             style={{ width: "100%", height: "100%" }}
-            mapStyle="mapbox://styles/mapbox/streets-v9"
+            mapStyle="mapbox://styles/mapbox/streets-v11"
           >
             {/* Add custom marker */}
             <Marker

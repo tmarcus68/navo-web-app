@@ -15,7 +15,6 @@ export async function GET() {
     }
 
     const locationData = await locationResponse.json();
-    console.log("Weather API, locationData: ", locationData);
 
     if (!locationData.latitude || !locationData.longitude) {
       throw new Error("Invalid location data");
@@ -43,8 +42,6 @@ export async function GET() {
     }
 
     const data = await response.json();
-
-    console.log("Weather API, weather data: ", data); // Debug log
 
     return NextResponse.json(data, {
       headers: {
