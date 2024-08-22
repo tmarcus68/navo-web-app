@@ -9,6 +9,7 @@ const locationCollection = database.collection("location");
 const mockLocationData = {
   latitude: 1.3521,
   longitude: 103.8198,
+  zoom: 10,
   timestamp: new Date().toISOString(),
 };
 
@@ -63,13 +64,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Store the location data in MongoDB
-    const latestLocationData = { latitude, longitude, timestamp };
+    const latestLocationData = { latitude, longitude, zoom: 16, timestamp };
     await locationCollection.insertOne(latestLocationData);
 
     return NextResponse.json(
       {
         status: "success",
-        data: { latitude, longitude, timestamp },
+        data: latestLocationData,
       },
       {
         headers: {

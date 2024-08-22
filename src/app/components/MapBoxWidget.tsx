@@ -22,9 +22,8 @@ export default function MapBoxWidget() {
           throw new Error("Failed to fetch location data");
         }
         const data: ViewState = await response.json(); // Fetch the location and treat it as viewState
-        setViewState((prevState) =>
-          prevState ? { ...data, zoom: 16 } : { ...data, zoom: 10 }
-        ); // Set viewState with location and initial zoom level
+
+        setViewState({ ...data }); // Set viewState with location
         setError(null); // Clear error if fetch is successful
       } catch (err: any) {
         setError(
