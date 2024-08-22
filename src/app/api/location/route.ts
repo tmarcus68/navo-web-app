@@ -11,35 +11,18 @@ let latestLocationData: {
   latitude: number;
   longitude: number;
   timestamp: string;
-} | null = null;
+} | null = mockLocationData; // Initialize with mock data
 
 export async function GET() {
   try {
-    if (latestLocationData) {
-      console.log(
-        "GET request - Returning latestLocationData: ",
-        latestLocationData
-      );
-      return NextResponse.json(latestLocationData, {
-        headers: {
-          "Cache-Control": "no-store",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
-    } else {
-      console.log(
-        "GET request - Returning mockLocationData: ",
-        mockLocationData
-      );
-      return NextResponse.json(mockLocationData, {
-        headers: {
-          "Cache-Control": "no-store",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
-    }
+    console.log("GET request - Returning location data: ", latestLocationData);
+    return NextResponse.json(latestLocationData, {
+      headers: {
+        "Cache-Control": "no-store",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error handling GET request:", error);
     return NextResponse.json(
