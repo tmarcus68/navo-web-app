@@ -4,8 +4,9 @@ export async function GET() {
   try {
     // Fetch location data from your location API route
     const locationResponse = await fetch(`${process.env.DOMAIN}/api/location`, {
+      cache: "no-store",
       headers: {
-        "Cache-Control": "no-store", // Ensure we get fresh data
+        "Cache-Control": "no-store",
       },
     });
 
