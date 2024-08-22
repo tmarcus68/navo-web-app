@@ -20,13 +20,25 @@ export async function GET() {
         "GET request - Returning latestLocationData: ",
         latestLocationData
       );
-      return NextResponse.json(latestLocationData);
+      return NextResponse.json(latestLocationData, {
+        headers: {
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
     } else {
       console.log(
         "GET request - Returning mockLocationData: ",
         mockLocationData
       );
-      return NextResponse.json(mockLocationData);
+      return NextResponse.json(mockLocationData, {
+        headers: {
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
     }
   } catch (error) {
     console.error("Error handling GET request:", error);
@@ -61,10 +73,19 @@ export async function POST(request: NextRequest) {
       latestLocationData
     );
 
-    return NextResponse.json({
-      status: "success",
-      data: { latitude, longitude, timestamp },
-    });
+    return NextResponse.json(
+      {
+        status: "success",
+        data: { latitude, longitude, timestamp },
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error handling POST request:", error);
     return NextResponse.json(
