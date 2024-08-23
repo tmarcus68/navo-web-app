@@ -86,7 +86,7 @@
 
 .map-widget {
   position: fixed;
-  bottom: 0px;
+  bottom: 0;
   right: 0;
   width: 535px;
   height: 180px;
@@ -102,6 +102,12 @@
 }
 
 .error {
+  position: absolute;
+  top: 0;
+  left: 0;
   color: red;
   font-size: 12px;
+  margin-top: 5px;
+  margin-left: 5px;
+  z-index: 9999;
 }

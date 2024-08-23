@@ -43,7 +43,7 @@ export default function MapBoxWidget() {
   return (
     <div className="map-widget">
       <div className="map-content">
-        {error && <p className="error">{error}</p>}
+        {error && !viewState && <p className="error">{error}</p>}
         {viewState ? (
           <Map
             mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}

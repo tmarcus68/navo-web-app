@@ -35,7 +35,7 @@ export default function WeatherWidget() {
     fetchWeather();
 
     // Poll weather data every 5 minute
-    const intervalId = setInterval(fetchWeather, 300000);
+    const intervalId = setInterval(fetchWeather, 60000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -43,7 +43,7 @@ export default function WeatherWidget() {
   return (
     <div className="weather-widget">
       <div className="widget-content">
-        {error && <p className="error">{error}</p>}
+        {error && !weather && <p className="error">{error}</p>}
         {weather ? (
           <div className="weather-info">
             <p className="temperature">{weather.current.temp.toFixed(1)}°C</p>
