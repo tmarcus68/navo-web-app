@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     if (
       typeof latitude !== "number" ||
       typeof longitude !== "number" ||
-      typeof timestamp !== "string"
+      typeof timestamp !== "number"
     ) {
       console.error("Invalid data format:", { latitude, longitude, timestamp });
       return NextResponse.json(
