@@ -34,8 +34,8 @@ export default function MapBoxWidget() {
 
     fetchLocation();
 
-    // Poll location data every minute
-    const intervalId = setInterval(fetchLocation, 60000);
+    // Poll location data every 10 seconds
+    const intervalId = setInterval(fetchLocation, 10000);
 
     return () => clearInterval(intervalId);
   }, []);
