@@ -10,6 +10,8 @@ const mockLocationData = {
   latitude: 1.3521,
   longitude: 103.8198,
   zoom: 10,
+  speedKm: 0.000,
+  travelled: 0.000,
   timestamp: new Date().toISOString(),
 };
 
@@ -48,23 +50,26 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { latitude, longitude, timestamp } = await request.json();
-
+    const { latitude, longitude, zoom, speedKm, travelled, timestamp } = await request.json();
     // Validate incoming data
     if (
       typeof latitude !== "number" ||
       typeof longitude !== "number" ||
+      typeof zoom !== "number" ||
+      typeof speedKm !== "number" ||
+      typeof travelled !== "number" ||
       typeof timestamp !== "number"
     ) {
-      console.error("Invalid data format:", { latitude, longitude, timestamp });
+      console.error("Invalid data format:", { latitude, longitude, zoom, speedKm, travelled, timestamp });
       return NextResponse.json(
         { status: "error", message: "Invalid data format" },
         { status: 400 }
       );
     }
-
+    
     // Store the location data in MongoDB
-    const latestLocationData = { latitude, longitude, zoom: 16, timestamp };
+    const latestLocationData = { latitude, longitude, zoom, speedKm, travelled, timestamp };
+
     await locationCollection.insertOne(latestLocationData);
 
     return NextResponse.json(
