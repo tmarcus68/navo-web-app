@@ -68,7 +68,9 @@ export async function POST(request: NextRequest) {
     }
     
     // Store the location data in MongoDB
-    const latestLocationData = { latitude, longitude, zoom, speedKm, travelled, timestamp };
+    const calculatedZoom = speedKm > 40 && speedKm < 81 ? 15 : speedKm > 80 ? 14 : 16;
+
+    const latestLocationData = { latitude, longitude, calculatedZoom, speedKm, travelled, timestamp };
 
     await locationCollection.insertOne(latestLocationData);
 
