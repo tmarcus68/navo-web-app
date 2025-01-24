@@ -101,6 +101,16 @@
   height: 100%;
 }
 
+.map-full-widget {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 384px;
+  height: 216px;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
 .error {
   position: absolute;
   top: 0;
