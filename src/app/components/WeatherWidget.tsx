@@ -24,6 +24,7 @@ export default function WeatherWidget() {
         }
         const data: WeatherData = await response.json();
         setWeather(data);
+        console.log(data);
         setError(null); // Clear error if fetch is successful
       } catch (err: any) {
         setError(
@@ -48,7 +49,7 @@ export default function WeatherWidget() {
           <div className="weather-info">
             <p className="temperature">{weather.current.temp.toFixed(1)}°C</p>
             <img
-              src={`https://openweathermap.org/img/wn/${weather.current.weather[0].icon}.png`}
+              src={`/basmilius/${weather.current.weather[0].icon}.svg`}
               alt={weather.current.weather[0].description}
               className="weather-icon"
             />
