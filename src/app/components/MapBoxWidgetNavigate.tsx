@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState, useRef, useCallback } from "react";
 import Map, { Marker, Source, Layer } from "react-map-gl";
 import type { MapRef } from "react-map-gl";
@@ -20,7 +18,7 @@ type GeoJSONRoute = {
 };
 
 const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-  const R = 6371000; // meters
+  const R = 6371000;
   const toRad = (value: number) => (value * Math.PI) / 180;
 
   const dLat = toRad(lat2 - lat1);
@@ -44,7 +42,7 @@ const isOffRoute = (currentLocation: ViewState, routeCoordinates: [number, numbe
 };
 
 const hasLocationChanged = (newLoc: ViewState, oldLoc: ViewState) => {
-  const threshold = 0.001; // ~ small change
+  const threshold = 0.001;
   const distance = Math.sqrt(
     (newLoc.latitude - oldLoc.latitude) ** 2 +
     (newLoc.longitude - oldLoc.longitude) ** 2
@@ -56,27 +54,12 @@ export default function MapBoxWidgetNavigate() {
   const [viewState, setViewState] = useState<ViewState | null>(null);
   const [lastLocation, setLastLocation] = useState<ViewState | null>(null);
   const [destination, setDestination] = useState<ViewState | null>(null);
+  const [previousDestination, setPreviousDestination] = useState<ViewState | null>(null);
   const [route, setRoute] = useState<GeoJSONRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const mapRef = useRef<MapRef>(null);
   const fitBoundsTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch destination on mount
-  useEffect(() => {
-    const fetchDestination = async () => {
-      try {
-        const response = await fetch("/api/destination");
-        if (!response.ok) throw new Error("Failed to fetch destination");
-        const data: ViewState = await response.json();
-        setDestination(data);
-      } catch (err: any) {
-        setError(err.message || "An error occurred while fetching destination");
-      }
-    };
-
-    fetchDestination();
-  }, []);
 
   const fetchRoute = useCallback(async (
     originLat: number,
@@ -148,6 +131,41 @@ export default function MapBoxWidgetNavigate() {
   };
 
   useEffect(() => {
+    const fetchDestination = async () => {
+      try {
+        const response = await fetch("/api/destination");
+        if (!response.ok) throw new Error("Failed to fetch destination");
+        const data: ViewState = await response.json();
+
+        if (!destination || !isSameDestination(data, destination)) {
+          setDestination(data);
+        }
+      } catch (err: any) {
+        setError(err.message || "An error occurred while fetching destination");
+      }
+    };
+
+    fetchDestination();
+
+    const intervalId = setInterval(fetchDestination, 5000);
+    return () => clearInterval(intervalId);
+  }, [destination]);
+
+  const isSameDestination = (newDest: ViewState, oldDest: ViewState | null) => {
+    if (!oldDest) return false;
+    return newDest.latitude === oldDest.latitude && newDest.longitude === oldDest.longitude;
+  };
+
+  useEffect(() => {
+    if (destination && !isSameDestination(destination, previousDestination)) {
+      setPreviousDestination(destination);
+      if (viewState) {
+        fetchRoute(viewState.latitude, viewState.longitude, destination.latitude, destination.longitude);
+      }
+    }
+  }, [destination, viewState, previousDestination, fetchRoute]);
+
+  useEffect(() => {
     const fetchLocation = async () => {
       try {
         const res = await fetch("/api/location");
@@ -160,7 +178,7 @@ export default function MapBoxWidgetNavigate() {
           setLastLocation(data);
 
           if (destination) {
-            await fetchRoute(data.latitude, data.longitude, destination.latitude, destination.longitude);
+            fetchRoute(data.latitude, data.longitude, destination.latitude, destination.longitude);
           }
         }
 
@@ -179,13 +197,6 @@ export default function MapBoxWidgetNavigate() {
     const intervalId = setInterval(fetchLocation, 5000);
     return () => clearInterval(intervalId);
   }, [lastLocation, destination, route, fetchRoute, debounceFitBounds]);
-
-  // (5) KEEP this exactly like you had
-  useEffect(() => {
-    if (viewState && destination) {
-      fetchRoute(viewState.latitude, viewState.longitude, destination.latitude, destination.longitude);
-    }
-  }, [viewState, destination, fetchRoute]);
 
   if (!viewState || !route || !destination) {
     return (
