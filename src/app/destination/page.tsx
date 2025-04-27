@@ -1,15 +1,23 @@
-"use client"; 
+"use client";
 
 import { useState, useEffect } from "react";
 
+type MapboxResult = {
+  place_name: string;
+  center: [number, number]; // [longitude, latitude]
+  id: string;
+};
+
 // Type for destination data
 type Destination = {
+  _id: string; // Assuming the _id is a string
   latitude: number;
   longitude: number;
-  timestamp: number; // Unix timestamp
+  timestamp: string; // ISO string timestamp
 };
 
 const mockDestinationData = { // Default Airport Data
+  _id: "mock-id",
   latitude: 1.3598904326267722,
   longitude: 103.98974810371432,
   timestamp: new Date().toISOString(),
@@ -17,37 +25,63 @@ const mockDestinationData = { // Default Airport Data
 
 export default function DestinationPage() {
   const [destination, setDestination] = useState<Destination | null>(null);
+  const [allDestinations, setAllDestinations] = useState<Destination[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<any>(null); // Track the selected location
+  const [selectedLocation, setSelectedLocation] = useState<MapboxResult | null>(null);
   const [loading, setLoading] = useState(false); // Track loading state for search
   const [saving, setSaving] = useState(false); // Track saving state
   const [errorMessage, setErrorMessage] = useState(""); // Track any error message
   const [searchActive, setSearchActive] = useState(false); // Track if a search is active (i.e., avoid rerunning search on selection)
 
-  // Fetch the current destination when the page loads
-  useEffect(() => {
-    const fetchDestination = async () => {
-      try {
-        const response = await fetch("/api/destination");
-        const data = await response.json();
+  const fetchDestination = async () => {
+    try {
+      const response = await fetch("/api/destination");
+      const data = await response.json();
 
-        // Check if the destination matches the mock data
-        if (
-          data.latitude === mockDestinationData.latitude &&
-          data.longitude === mockDestinationData.longitude
-        ) {
-          setDestination(null); // If it matches, set destination to null
-        } else {
-          setDestination(data); // Otherwise, set the fetched destination
-        }
-      } catch (error) {
-        console.error("Error fetching current destination:", error);
-        setErrorMessage("Failed to load current destination.");
+      // Check if the destination matches the mock data
+      if (
+        data.latitude === mockDestinationData.latitude &&
+        data.longitude === mockDestinationData.longitude
+      ) {
+        setDestination(null); // If it matches, set destination to null
+      } else {
+        setDestination(data); // Otherwise, set the fetched destination
       }
-    };
+    } catch (error) {
+      console.error("Error fetching current destination:", error);
+      setErrorMessage("Failed to load current destination.");
+    }
+  };
 
+  const fetchAllDestinations = async () => {
+    try {
+      const response = await fetch("/api/destination?all=true");
+      const data = await response.json();
+
+      if (
+        data.length === 1 &&
+        data[0].latitude === mockDestinationData.latitude &&
+        data[0].longitude === mockDestinationData.longitude
+      ) {
+        setAllDestinations([]); // If it matches, set destination to null
+      } else {
+        setAllDestinations(data); // Otherwise, set the fetched destinations
+      }
+    } catch (error) {
+      console.error("Error fetching all destinations:", error);
+      setErrorMessage("Failed to fetch all destinations.");
+    }
+  };
+  
+  // Fetch the oldest destination when the page loads
+  useEffect(() => {
     fetchDestination();
+  }, []);
+
+  // Fetch all destinations sorted from old to new
+  useEffect(() => {  
+    fetchAllDestinations();
   }, []);
 
   // Debounced search function to reduce the number of API calls
@@ -92,11 +126,13 @@ export default function DestinationPage() {
 
   // Handle result click (user selects a location)
   const handleResultClick = (place: any) => {
-    setSearchQuery(place.place_name);
-    setSearchResults([]); // Clear search results when a suggestion is selected
-    setSelectedLocation(place); // Set the selected location
-    setSearchActive(true); // Set searchActive to true to prevent further API calls
-    setErrorMessage(""); // Clear error message when selecting a location
+    if (!selectedLocation) {
+      setSearchQuery(place.place_name);
+      setSearchResults([]); // Clear search results when a suggestion is selected
+      setSelectedLocation(place); // Set the selected location
+      setSearchActive(true); // Set searchActive to true to prevent further API calls
+      setErrorMessage(""); // Clear error message when selecting a location
+    }
   };
 
   // Handle save button click
@@ -122,8 +158,11 @@ export default function DestinationPage() {
       });
 
       const data = await response.json();
+      
       if (response.ok) {
-        setDestination(data.data); // Update destination state with new data
+        await fetchDestination();
+        await fetchAllDestinations();
+
         setSearchQuery(""); // Clear search query after saving
         setSearchResults([]); // Clear search results
         setSelectedLocation(null); // Clear selected location
@@ -138,27 +177,67 @@ export default function DestinationPage() {
     }
   };
 
-  // Handle clear button click
-  const handleClear = async () => {
+  // Handle delete button for individual destination
+  const handleDeleteDestination = async (id: string) => {
+    setSaving(true);
+    try {
+      const response = await fetch(`/api/destination?ids=${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        setAllDestinations(allDestinations.filter(dest => dest._id !== id)); // Remove deleted destination
+        setDestination(null); // Clear the destination in the UI
+      } else {
+        setErrorMessage("Failed to delete destination.");
+      }
+    } catch (error) {
+      console.error("Error deleting destination:", error);
+      setErrorMessage("Failed to delete destination.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle clear button click to delete all destinations
+  const handleClearAll = async () => {
     setSaving(true);
     try {
       const response = await fetch("/api/destination", {
         method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ids: allDestinations.map(dest => dest._id), // Pass the IDs of destinations to delete
+        }),
       });
 
       if (response.ok) {
+        setAllDestinations([]); // Clear all destinations in the UI
         setDestination(null); // Clear the destination in the UI
         setSearchQuery(""); // Clear search query after clearing
         setSearchResults([]); // Clear search results
       } else {
-        setErrorMessage("Failed to clear destination.");
+        setErrorMessage("Failed to clear all destinations.");
       }
     } catch (error) {
-      console.error("Error clearing destination:", error);
-      setErrorMessage("Failed to clear destination.");
+      console.error("Error clearing destinations:", error);
+      setErrorMessage("Failed to clear all destinations.");
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle clear selected location button click
+  const handleClearSelectedLocation = () => {
+    setSelectedLocation(null); // Reset selected location
+    setSearchQuery(""); // Clear search query
+    setSearchResults([]); // Clear search results
+    setSearchActive(false); // Allow new search again
   };
 
   return (
@@ -171,7 +250,7 @@ export default function DestinationPage() {
           <p>Longitude: {destination.longitude}</p>
         </div>
       ) : (
-        <p className="no-destination">No destination saved</p>
+        <p className="no-destination">No current destination</p>
       )}
 
       <div className="mb-4">
@@ -181,6 +260,7 @@ export default function DestinationPage() {
           onChange={handleSearchChange}
           placeholder="Search for a location"
           className="search-input"
+          disabled={!!selectedLocation}
         />
         <div className="search-results">
           {loading ? (
@@ -205,6 +285,9 @@ export default function DestinationPage() {
           <p>
             Latitude: {selectedLocation.center[1]}, Longitude: {selectedLocation.center[0]}
           </p>
+          <button onClick={handleClearSelectedLocation} className="clear-selected-location-button">
+            X
+          </button>
         </div>
       )}
 
@@ -223,12 +306,35 @@ export default function DestinationPage() {
           {saving ? "Saving..." : "Save New Destination"}
         </button>
         <button
-          onClick={handleClear}
+          onClick={handleClearAll}
           className="clear-button"
-          disabled={!destination || saving}
+          disabled={saving || !allDestinations.length || !destination}
         >
-          {saving ? "Clearing..." : "Clear Destination"}
+          {saving ? "Clearing..." : "Clear All Destinations"}
         </button>
+      </div>
+
+      <div className="destinations-list">
+        <h2 className="all-destinations-header">All Destinations</h2>
+        {allDestinations.length > 0 ? (
+          <ul className="destinations-card-list">
+            {allDestinations.map((dest, index) => (
+              <li key={dest._id} className="destination-card">
+                <div className="destination-card-header">
+                  <p className="destination-card-title">Destination {index + 1}</p>
+                  <button onClick={() => handleDeleteDestination(dest._id)} className="delete-button">
+                    Delete
+                  </button>
+                </div>
+                <p className="destination-card-location">
+                  Latitude: {dest.latitude}, Longitude: {dest.longitude}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="no-destination">No destinations available</p>
+        )}
       </div>
     </div>
   );
