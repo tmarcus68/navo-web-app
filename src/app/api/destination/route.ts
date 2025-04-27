@@ -3,27 +3,23 @@ import { MongoClient } from "mongodb";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
 const database = client.db("navo-web-app");
-const locationCollection = database.collection("location");
+const destinationCollection = database.collection("destination");
 
-// Updated mock location data with provided coordinates
-const mockLocationData = { // Center of Singapore
-  latitude: 1.3521,
-  longitude: 103.8198,
-  zoom: 10,
-  speedKm: 0.000,
-  travelled: 0.000,
+const mockDestinationData = { // Airport
+  latitude: 1.3598904326267722,
+  longitude: 103.98974810371432,
   timestamp: new Date().toISOString(),
 };
 
 export async function GET() {
   try {
-    const latestLocationData = await locationCollection.findOne(
+    const latestDestinationData = await destinationCollection.findOne(
       {},
       { sort: { _id: -1 } }
     );
 
-    if (latestLocationData) {
-      return NextResponse.json(latestLocationData, {
+    if (latestDestinationData) {
+      return NextResponse.json(latestDestinationData, {
         headers: {
           "Cache-Control": "no-store",
           Pragma: "no-cache",
@@ -31,7 +27,7 @@ export async function GET() {
         },
       });
     } else {
-      return NextResponse.json(mockLocationData, {
+      return NextResponse.json(mockDestinationData, {
         headers: {
           "Cache-Control": "no-store",
           Pragma: "no-cache",
@@ -50,34 +46,31 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { latitude, longitude, zoom, speedKm, travelled, timestamp } = await request.json();
-    // Validate incoming data
+    const { latitude, longitude, timestamp } = await request.json();
+
     if (
       typeof latitude !== "number" ||
       typeof longitude !== "number" ||
-      typeof zoom !== "number" ||
-      typeof speedKm !== "number" ||
-      typeof travelled !== "number" ||
       typeof timestamp !== "number"
     ) {
-      console.error("Invalid data format:", { latitude, longitude, zoom, speedKm, travelled, timestamp });
+      console.error("Invalid data format:", { latitude, longitude, timestamp });
       return NextResponse.json(
         { status: "error", message: "Invalid data format" },
         { status: 400 }
       );
     }
 
-    // Store the location data in MongoDB
-    const calculatedZoom = speedKm < 41 ? 16 : speedKm > 40 && speedKm < 81 ? 15 : speedKm > 80 ? 14 : 10;
+    // Clear existing destination data from the database before inserting the new one
+    await destinationCollection.deleteMany({}); // Deletes all documents in the destination collection
 
-    const latestLocationData = { latitude, longitude, zoom: calculatedZoom, speedKm, travelled, timestamp };
+    const newDestinationData = { latitude, longitude, timestamp };
 
-    await locationCollection.insertOne(latestLocationData);
+    await destinationCollection.insertOne(newDestinationData);
 
     return NextResponse.json(
       {
         status: "success",
-        data: latestLocationData,
+        data: newDestinationData,
       },
       {
         headers: {
@@ -91,6 +84,23 @@ export async function POST(request: NextRequest) {
     console.error("Error handling POST request:", error);
     return NextResponse.json(
       { status: "error", message: "Failed to handle POST request" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    await destinationCollection.deleteMany({});
+
+    return NextResponse.json(
+      { status: "success", message: "Destination cleared successfully" },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error clearing destination:", error);
+    return NextResponse.json(
+      { status: "error", message: "Failed to clear destination" },
       { status: 500 }
     );
   }
