@@ -66,7 +66,7 @@ export default function MapBoxWidget() {
             </Marker>
           </Map>
         ) : (
-          <p>Loading map...</p>
+          <p>Loading location map...</p>
         )}
       </div>
     </div>

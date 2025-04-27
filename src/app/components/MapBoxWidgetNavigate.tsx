@@ -1,9 +1,9 @@
-"use client"; // This directive makes this component a Client Component
+"use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Map, { Marker, Source, Layer } from "react-map-gl";
+import type { MapRef } from "react-map-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { MapRef } from "react-map-gl"; // For controlling map programmatically
 
 type ViewState = {
   latitude: number;
@@ -11,106 +11,93 @@ type ViewState = {
   zoom: number;
 };
 
+type GeoJSONRoute = {
+  type: "Feature";
+  geometry: {
+    type: "LineString";
+    coordinates: [number, number][];
+  };
+};
+
+const haversineDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371000; // meters
+  const toRad = (value: number) => (value * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
+
+const isOffRoute = (currentLocation: ViewState, routeCoordinates: [number, number][]) => {
+  const thresholdMeters = 30;
+  return routeCoordinates.every(([lng, lat]) =>
+    haversineDistance(currentLocation.latitude, currentLocation.longitude, lat, lng) > thresholdMeters
+  );
+};
+
+const hasLocationChanged = (newLoc: ViewState, oldLoc: ViewState) => {
+  const threshold = 0.001; // ~ small change
+  const distance = Math.sqrt(
+    (newLoc.latitude - oldLoc.latitude) ** 2 +
+    (newLoc.longitude - oldLoc.longitude) ** 2
+  );
+  return distance > threshold;
+};
+
 export default function MapBoxWidgetNavigate() {
-  const [viewState, setViewState] = useState<ViewState | null>(null); // location
+  const [viewState, setViewState] = useState<ViewState | null>(null);
   const [lastLocation, setLastLocation] = useState<ViewState | null>(null);
-  const [destination, setDestination] = useState<ViewState | null>(null); // Track destination in state
-  const [route, setRoute] = useState<any>(null); // State for route data
-  const mapRef = useRef<MapRef>(null); // Ref to control the map
+  const [destination, setDestination] = useState<ViewState | null>(null);
+  const [route, setRoute] = useState<GeoJSONRoute | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch destination from API
+  const mapRef = useRef<MapRef>(null);
+  const fitBoundsTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch destination on mount
   useEffect(() => {
     const fetchDestination = async () => {
       try {
-        const response = await fetch("/api/destination"); // Replace with your actual API endpoint
+        const response = await fetch("/api/destination");
         if (!response.ok) throw new Error("Failed to fetch destination");
         const data: ViewState = await response.json();
-        setDestination(data); // Set destination from API response
+        setDestination(data);
       } catch (err: any) {
         setError(err.message || "An error occurred while fetching destination");
       }
     };
 
-    fetchDestination(); // Fetch destination once when the component mounts
+    fetchDestination();
   }, []);
 
-  // Fetch location data from API and update the map
-  useEffect(() => {
-    const fetchLocation = async () => {
-      try {
-        const response = await fetch("/api/location");
-        if (!response.ok) {
-          throw new Error("Failed to fetch location data");
-        }
-        const data: ViewState = await response.json();
-
-        // Fetch location only if it's different from the last one
-        if (!lastLocation || hasLocationChanged(data, lastLocation)) {
-          setViewState({ ...data });
-          setLastLocation(data); // Update last location
-
-          // Fetch the route after fetching the location, based on the updated destination
-          if (destination) {
-            fetchRoute(data.latitude, data.longitude, destination.latitude, destination.longitude);
-          }
-        }
-
-        // Fit bounds of map to include both origin and destination
-        if (mapRef.current && destination) {
-          const bounds: [[number, number], [number, number]] = [
-            [Math.min(data.longitude, destination.longitude), Math.min(data.latitude, destination.latitude)],
-            [Math.max(data.longitude, destination.longitude), Math.max(data.latitude, destination.latitude)],
-          ];
-          mapRef.current.fitBounds(bounds, { padding: 60, duration: 1000 });
-        }
-      } catch (err: any) {
-        setError(err.message || "An error occurred while fetching location data");
-      }
-    };
-
-    fetchLocation();
-
-    // Poll location data every 5 seconds
-    const intervalId = setInterval(fetchLocation, 5000); // Poll every 5 seconds
-    return () => clearInterval(intervalId); // Clean up on unmount
-  }, [lastLocation, destination]); // Re-run when either location or destination changes
-
-  const hasLocationChanged = (newLocation: ViewState, oldLocation: ViewState) => {
-    const distanceThreshold = 0.001; // Distance threshold (adjust as needed)
-    const distance = Math.sqrt(
-      Math.pow(newLocation.latitude - oldLocation.latitude, 2) + Math.pow(newLocation.longitude - oldLocation.longitude, 2)
-    );
-    return distance > distanceThreshold;
-  };
-
-  const fetchRoute = async (
-    originLatitude?: number,
-    originLongitude?: number,
-    destinationLatitude?: number,
-    destinationLongitude?: number
+  const fetchRoute = useCallback(async (
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number
   ) => {
-    const params = new URLSearchParams();
-  
-    if (originLatitude !== undefined && originLongitude !== undefined) {
-      params.append("originLatitude", originLatitude.toString());
-      params.append("originLongitude", originLongitude.toString());
-    }
-  
-    if (destinationLatitude !== undefined && destinationLongitude !== undefined) {
-      params.append("destinationLatitude", destinationLatitude.toString());
-      params.append("destinationLongitude", destinationLongitude.toString());
-    }
-  
-    const url = params.toString()
-      ? `/api/directions?${params.toString()}`
-      : `/api/directions`;
-  
+    const params = new URLSearchParams({
+      originLatitude: originLat.toString(),
+      originLongitude: originLng.toString(),
+      destinationLatitude: destLat.toString(),
+      destinationLongitude: destLng.toString(),
+    });
+
     try {
-      const directionsResponse = await fetch(url);
-      const directionsData = await directionsResponse.json();
+      const res = await fetch(`/api/directions?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch route");
+
+      const directionsData = await res.json();
       const decodedRoute = directionsData.route?.coordinates || [];
-  
+
       if (decodedRoute.length > 0) {
         setRoute({
           type: "Feature",
@@ -120,59 +107,132 @@ export default function MapBoxWidgetNavigate() {
           },
         });
       } else {
-        setError("No route found.");
+        setError("No route found");
       }
     } catch (err) {
-      setError("Failed to fetch route.");
+      setError("Failed to fetch route");
     }
+  }, []);
+
+  const debounceFitBounds = useCallback((location: ViewState, dest: ViewState, route?: GeoJSONRoute) => {
+    if (fitBoundsTimeout.current) clearTimeout(fitBoundsTimeout.current);
+
+    fitBoundsTimeout.current = setTimeout(() => {
+      if (!mapRef.current) return;
+
+      const bounds = calculateBounds(location, dest, route?.geometry.coordinates || []);
+      mapRef.current.fitBounds(bounds, { padding: 60, duration: 1000 });
+    }, 300);
+  }, []);
+
+  const calculateBounds = (loc: ViewState, dest: ViewState, routeCoords: [number, number][]) => {
+    const allCoords = [
+      [loc.longitude, loc.latitude],
+      [dest.longitude, dest.latitude],
+      ...routeCoords,
+    ];
+
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+
+    for (const [lng, lat] of allCoords) {
+      minLng = Math.min(minLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLng = Math.max(maxLng, lng);
+      maxLat = Math.max(maxLat, lat);
+    }
+
+    return [
+      [minLng, minLat],
+      [maxLng, maxLat],
+    ] as [[number, number], [number, number]];
   };
-  
+
+  useEffect(() => {
+    const fetchLocation = async () => {
+      try {
+        const res = await fetch("/api/location");
+        if (!res.ok) throw new Error("Failed to fetch location");
+
+        const data: ViewState = await res.json();
+
+        if (!lastLocation || hasLocationChanged(data, lastLocation)) {
+          setViewState(data);
+          setLastLocation(data);
+
+          if (destination) {
+            await fetchRoute(data.latitude, data.longitude, destination.latitude, destination.longitude);
+          }
+        }
+
+        if (mapRef.current && destination && route) {
+          if (isOffRoute(data, route.geometry.coordinates)) {
+            await fetchRoute(data.latitude, data.longitude, destination.latitude, destination.longitude);
+          }
+          debounceFitBounds(data, destination, route);
+        }
+      } catch (err: any) {
+        setError(err.message || "Error fetching location");
+      }
+    };
+
+    fetchLocation();
+    const intervalId = setInterval(fetchLocation, 5000);
+    return () => clearInterval(intervalId);
+  }, [lastLocation, destination, route, fetchRoute, debounceFitBounds]);
+
+  // (5) KEEP this exactly like you had
+  useEffect(() => {
+    if (viewState && destination) {
+      fetchRoute(viewState.latitude, viewState.longitude, destination.latitude, destination.longitude);
+    }
+  }, [viewState, destination, fetchRoute]);
+
+  if (!viewState || !route || !destination) {
+    return (
+      <div className="map-full-widget">
+        <div className="map-content">
+          <p>Loading navigation map...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="map-full-widget">
       <div className="map-content">
-        {error && !viewState && <p className="error">{error}</p>}
-        {!viewState ? (
-          <p>Loading map...</p>
-        ) : (
-          <Map
-            ref={mapRef}
-            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
-            initialViewState={{
-              latitude: viewState.latitude,
-              longitude: viewState.longitude,
-              zoom: 14,
-            }}
-            style={{ width: "100%", height: "100%" }}
-            mapStyle="mapbox://styles/mapbox/streets-v11"
-          >
-            {/* Current Location Marker */}
-            <Marker latitude={viewState.latitude} longitude={viewState.longitude} anchor="center">
-              <img src="/jiuerxiong-logo.png" alt="Current Location" style={{ width: 50, height: 50 }} />
-            </Marker>
+        {error && <p className="error">{error}</p>}
+        <Map
+          ref={mapRef}
+          mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+          initialViewState={{
+            latitude: viewState.latitude,
+            longitude: viewState.longitude,
+            zoom: 14,
+          }}
+          style={{ width: "100%", height: "100%" }}
+          mapStyle="mapbox://styles/mapbox/streets-v11"
+        >
+          <Marker latitude={viewState.latitude} longitude={viewState.longitude} anchor="center">
+            <img src="/jiuerxiong-logo.png" alt="Current Location" style={{ width: 50, height: 50 }} />
+          </Marker>
 
-            {/* Destination Marker */}
-            {destination && (
-              <Marker latitude={destination.latitude} longitude={destination.longitude} anchor="center">
-                <img src="/qingyou-logo.png" alt="Destination" style={{ width: 50, height: 50 }} />
-              </Marker>
-            )}
+          <Marker latitude={destination.latitude} longitude={destination.longitude} anchor="bottom">
+            <img src="/destination-icon.png" alt="Destination" style={{ width: 50, height: 50 }} />
+          </Marker>
 
-            {/* Path Line */}
-            {route && (
-              <Source id="route" type="geojson" data={route}>
-                <Layer
-                  id="route-line"
-                  type="line"
-                  paint={{
-                    "line-color": "#007AFF", // Blue path color
-                    "line-width": 4, // Solid line with a width of 4px
-                    // No line-dasharray to make it solid
-                  }}
-                />
-              </Source>
-            )}
-          </Map>
-        )}
+          {route && (
+            <Source id="route" type="geojson" data={route}>
+              <Layer
+                id="route-line"
+                type="line"
+                paint={{
+                  "line-color": "#007AFF",
+                  "line-width": 4,
+                }}
+              />
+            </Source>
+          )}
+        </Map>
       </div>
     </div>
   );
