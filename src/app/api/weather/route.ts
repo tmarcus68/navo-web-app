@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Fetch location data from your location API route
+    // Fetch location data from the location API
     const locationResponse = await fetch(`${process.env.DOMAIN}/api/location`, {
       cache: "no-store",
       headers: {
@@ -11,25 +11,19 @@ export async function GET() {
     });
 
     if (!locationResponse.ok) {
-      throw new Error("Failed to fetch location data");
+      throw new Error(`Failed to fetch location data: ${locationResponse.statusText}`);
     }
 
     const locationData = await locationResponse.json();
 
     if (!locationData.latitude || !locationData.longitude) {
-      throw new Error("Invalid location data");
+      throw new Error("Invalid location data: Missing latitude or longitude");
     }
 
     // Construct the weather API URL
-    const weatherUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${
-      locationData.latitude
-    }&lon=${
-      locationData.longitude
-    }&exclude=minutely,hourly,daily,alerts&units=metric&appid=${
-      process.env.OPENWEATHERMAP_API_KEY
-    }&_=${new Date().getTime()}`;
+    const weatherUrl = `https://api.openweathermap.org/data/3.0/onecall?lat=${locationData.latitude}&lon=${locationData.longitude}&exclude=minutely,hourly,daily,alerts&units=metric&appid=${process.env.OPENWEATHERMAP_API_KEY}&_=${new Date().getTime()}`;
 
-    // Fetch weather data from OpenWeatherMap API using the location data
+    // Fetch weather data from OpenWeatherMap API
     const response = await fetch(weatherUrl, {
       cache: "no-store",
       headers: {
@@ -38,12 +32,12 @@ export async function GET() {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch weather data");
+      throw new Error(`Failed to fetch weather data: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const weatherData = await response.json();
 
-    return NextResponse.json(data, {
+    return NextResponse.json(weatherData, {
       headers: {
         "Cache-Control": "no-store",
         Pragma: "no-cache",
@@ -53,7 +47,7 @@ export async function GET() {
   } catch (error) {
     console.error("Error fetching weather data:", error);
     return NextResponse.json(
-      { status: "error", message: "Failed to fetch weather data" },
+      { status: "error", message: (error as Error).message ?? "Failed to fetch weather data" },
       { status: 500 }
     );
   }

@@ -50,7 +50,7 @@ const hasLocationChanged = (newLoc: ViewState, oldLoc: ViewState) => {
   return distance > threshold;
 };
 
-export default function MapBoxWidgetNavigate() {
+export default function MapBoxWidgetNavigation() {
   const [viewState, setViewState] = useState<ViewState | null>(null);
   const [lastLocation, setLastLocation] = useState<ViewState | null>(null);
   const [destination, setDestination] = useState<ViewState | null>(null);

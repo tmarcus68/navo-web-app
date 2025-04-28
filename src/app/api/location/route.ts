@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MongoClient } from "mongodb";
-
-const client = new MongoClient(process.env.MONGODB_URI!);
-const database = client.db("navo-web-app");
-const locationCollection = database.collection("location");
+import { ObjectId } from "mongodb";
+import { connectToDatabase } from "@/lib/mongodb"; // Reusing the helper function from mongodb.ts
 
 // Updated mock location data with provided coordinates
 const mockLocationData = { // Center of Singapore
@@ -17,6 +14,11 @@ const mockLocationData = { // Center of Singapore
 
 export async function GET() {
   try {
+    // Connect to the database and get the location collection
+    const { db } = await connectToDatabase();
+    const locationCollection = db.collection("location");
+
+    // Find the latest location data
     const latestLocationData = await locationCollection.findOne(
       {},
       { sort: { _id: -1 } }
@@ -31,6 +33,7 @@ export async function GET() {
         },
       });
     } else {
+      // Return mock data if no location data is found
       return NextResponse.json(mockLocationData, {
         headers: {
           "Cache-Control": "no-store",
@@ -50,7 +53,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { latitude, longitude, zoom, speedKm, travelled, timestamp } = await request.json();
+    const {
+      latitude,
+      longitude,
+      zoom,
+      speedKm,
+      travelled,
+      timestamp,
+    } = await request.json();
+
     // Validate incoming data
     if (
       typeof latitude !== "number" ||
@@ -60,18 +71,38 @@ export async function POST(request: NextRequest) {
       typeof travelled !== "number" ||
       typeof timestamp !== "number"
     ) {
-      console.error("Invalid data format:", { latitude, longitude, zoom, speedKm, travelled, timestamp });
+      console.error("Invalid data format:", {
+        latitude,
+        longitude,
+        zoom,
+        speedKm,
+        travelled,
+        timestamp,
+      });
       return NextResponse.json(
         { status: "error", message: "Invalid data format" },
         { status: 400 }
       );
     }
 
-    // Store the location data in MongoDB
-    const calculatedZoom = speedKm < 41 ? 16 : speedKm > 40 && speedKm < 81 ? 15 : speedKm > 80 ? 14 : 10;
+    // Connect to the database
+    const { db } = await connectToDatabase();
+    const locationCollection = db.collection("location");
 
-    const latestLocationData = { latitude, longitude, zoom: calculatedZoom, speedKm, travelled, timestamp };
+    // Calculate the zoom level based on speed
+    const calculatedZoom =
+      speedKm < 41 ? 16 : speedKm > 40 && speedKm < 81 ? 15 : speedKm > 80 ? 14 : 10;
 
+    const latestLocationData = {
+      latitude,
+      longitude,
+      zoom: calculatedZoom,
+      speedKm,
+      travelled,
+      timestamp,
+    };
+
+    // Store the location data in the database
     await locationCollection.insertOne(latestLocationData);
 
     return NextResponse.json(

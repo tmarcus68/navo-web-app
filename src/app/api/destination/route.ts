@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MongoClient, ObjectId } from "mongodb";
-
-const client = new MongoClient(process.env.MONGODB_URI!);
-const database = client.db("navo-web-app");
-const destinationCollection = database.collection("destination");
-
+import { ObjectId } from "mongodb";
+import { connectToDatabase } from "@/lib/mongodb"; // Importing the helper function from mongodb.ts
 const mockDestinationData = { // Airport
   _id: "mock-id",
   latitude: 1.3598904326267722,
@@ -17,6 +13,10 @@ export async function GET(req: Request) {
   const all = url.searchParams.get("all");
 
   try {
+    // Connect to the database and get the destination collection
+    const { db } = await connectToDatabase();
+    const destinationCollection = db.collection("destination");
+
     if (all === "true") {
       // Fetch all destinations from the database, sorted by _id (oldest first)
       const allDestinations = await destinationCollection
@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       // If destinations exist, return them. If not, include mockDestinationData in the array.
       const responseDestinations = allDestinations.length > 0
         ? allDestinations
-        : [mockDestinationData];
+        : [mockDestinationData]; // Fallback to mock data if no destinations found
 
       return NextResponse.json(responseDestinations, {
         headers: {
@@ -86,6 +86,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Connect to the database
+    const { db } = await connectToDatabase();
+    const destinationCollection = db.collection("destination");
+
     const newDestinationData = { latitude, longitude, timestamp };
 
     await destinationCollection.insertOne(newDestinationData);
@@ -120,6 +124,10 @@ export async function DELETE(request: NextRequest) {
     if (idsParam) {
       const ids = idsParam.split(",").map((id) => new ObjectId(id));
 
+      // Connect to the database
+      const { db } = await connectToDatabase();
+      const destinationCollection = db.collection("destination");
+
       const result = await destinationCollection.deleteMany({
         _id: { $in: ids },
       });
@@ -133,6 +141,9 @@ export async function DELETE(request: NextRequest) {
       );
     } else {
       // No ids provided, delete all destinations
+      const { db } = await connectToDatabase();
+      const destinationCollection = db.collection("destination");
+
       await destinationCollection.deleteMany({});
 
       return NextResponse.json(
