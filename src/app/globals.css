@@ -95,6 +95,16 @@
   box-sizing: border-box;
 }
 
+.map-widget-qy {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 1920px;
+  height: 1080px;
+  z-index: 999;
+  box-sizing: border-box;
+}
+
 .map-content {
   display: flex;
   align-items: center;
