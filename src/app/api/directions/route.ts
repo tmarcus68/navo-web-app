@@ -1,7 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Simple in-memory store (IP → last request time)
+const requestTimestamps = new Map<string, number>();
+
 export async function GET(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const now = Date.now();
+    const lastRequestTime = requestTimestamps.get(ip) || 0;
+
+    // 30-second window (in ms)
+    const THROTTLE_INTERVAL = 30 * 1000;
+
+    if (now - lastRequestTime < THROTTLE_INTERVAL) {
+      const wait = Math.ceil((THROTTLE_INTERVAL - (now - lastRequestTime)) / 1000);
+      return NextResponse.json(
+        { status: "error", message: `Rate limit exceeded. Try again in ${wait}s.` },
+        { status: 429 }
+      );
+    }
+
+    // Store timestamp of this request
+    requestTimestamps.set(ip, now);
+
     const { searchParams } = new URL(req.url);
 
     const defaultOrigin = { // Jurong Point
